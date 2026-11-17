@@ -1,0 +1,39 @@
+pragma solidcash ^0.51.0;
+
+/**
+ * IdentityAnchor — on-chain pin for a bchblaze-id binding.
+ *
+ * The 32-byte CashTokens NFT commitment is the output of
+ * `@bchblaze/identity` `prepareCashTokenCommitment(binding)`:
+ * SHA-256("bchblaze-id/cashtoken-commitment/v1\n" + canonical proof fields).
+ *
+ * That hash includes bindingId, nostr event id, BCH signature, address and
+ * pubkey, so a later rebind does not match this NFT.
+ *
+ * This file is a working skeleton: genesis stores `initialCommitment` in
+ * contract state (the SDK packs state into the NFT commitment). `reanchor`
+ * lets the same owner replace it after a key rotation. `release` returns
+ * satoshis to the owner.
+ *
+ * The Next.js demo does not broadcast genesis; it prepares the exact 32-byte
+ * commitment a wallet/SDK would put on the NFT.
+ */
+contract IdentityAnchor(bytes20 ownerPkh) {
+    bytes32 public bindingCommitment;
+
+    constructor(bytes32 initialCommitment) {
+        this.bindingCommitment = initialCommitment;
+    }
+
+    function reanchor(bytes32 newCommitment, pubkey pk, sig s) {
+        require(hash160(pk) == ownerPkh);
+        require(checkSig(s, pk));
+        require(newCommitment != this.bindingCommitment);
+        this.bindingCommitment = newCommitment;
+    }
+
+    function release(pubkey pk, sig s) {
+        require(hash160(pk) == ownerPkh);
+        require(checkSig(s, pk));
+    }
+}

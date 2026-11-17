@@ -1,0 +1,30 @@
+{
+  "name": "@bchblaze/contracts",
+  "version": "1.0.0",
+  "description": "SolidCash contracts: identity anchor and ClaimForge Merkle claims",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "contracts"
+  ],
+  "scripts": {
+    "compile": "solidhat compile",
+    "test": "solidhat compile && vitest run --config vitest.solidhat.config.ts --root .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bchblaze/identity": "workspace:*",
+    "@noble/hashes": "^1.8.0"
+  },
+  "devDependencies": {
+    "@solidcash/solidhat": "0.51.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.4"
+  },
+  "license": "MIT"
+}

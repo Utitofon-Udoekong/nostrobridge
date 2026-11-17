@@ -1,0 +1,148 @@
+pragma solidcash ^0.51.0;
+
+/**
+ * ClaimForge — pull-based Merkle claims for one published epoch.
+ *
+ * Leaf preimage, 65 bytes, hashed with SHA-256:
+ *   0x01 || pkh[20] || amount_le[8] || epoch_le[4] || assetCategory[32]
+ * amount and epoch are little-endian, the same width OP_NUM2BIN writes for
+ * bytes8(uint64) and bytes4(uint32). assetCategory is 32 zero bytes for BCH
+ * and the FLDCH category id (display order) when the payout is that token.
+ *
+ * The proof is a fixed 4-level path (16 leaves). Bit i of `path` means this
+ * node is the right child at level i, so the pair is sha256(sibling || node).
+ * A clear bit hashes sha256(node || sibling). Unused leaves are the pad hash
+ * sha256(0x00 || 32 zero bytes), which is not a version-0x01 claim preimage.
+ *
+ * Replay protection is the `claimed` verified mapping: the first successful
+ * claim inserts the leaf, and a second spend of that leaf fails. Authorization
+ * is checkSig plus HASH160(pubkey) == leaf pkh. msg.sender is not consulted.
+ */
+contract ClaimForge(pubkey publisher) {
+    bytes32 public root;
+    uint32 public epoch;
+    bytes32 public assetCategory;
+    mapping(bytes32 => bool) public claimed;
+
+    event Claimed(bytes20 claimant, uint64 amount, bytes32 leaf, uint32 epoch);
+
+    constructor(bytes32 initialRoot, uint32 initialEpoch, bytes32 initialAsset) {
+        require(initialEpoch > 0);
+        require(initialRoot != bytes32(0));
+        this.root = initialRoot;
+        this.epoch = initialEpoch;
+        this.assetCategory = initialAsset;
+    }
+
+    function publish(bytes32 nextRoot, uint32 nextEpoch, bytes32 nextAsset, sig publisherSig) {
+        require(checkSig(publisherSig, publisher));
+        require(nextEpoch > this.epoch);
+        require(nextRoot != bytes32(0));
+        this.root = nextRoot;
+        this.epoch = nextEpoch;
+        this.assetCategory = nextAsset;
+    }
+
+    function fund() public payable {
+        require(msg.value > 0);
+    }
+
+    function previewLeaf(bytes20 claimant, uint64 amount) public view returns (bytes32) {
+        return leafFor(claimant, amount);
+    }
+
+    function claimBch(
+        bytes20 claimant,
+        uint64 amount,
+        bytes32 sibling0,
+        bytes32 sibling1,
+        bytes32 sibling2,
+        bytes32 sibling3,
+        uint8 path,
+        pubkey claimantPk,
+        sig claimantSig,
+        address payable recipient,
+        bytes32 leafKey
+    ) public {
+        // Hash checks stay after the payout statement. They are still consensus
+        // checks: a failed require invalidates the whole transaction. Keeping them
+        // out of the pre-transfer activation avoids a compiler limit on hash recipes
+        // in the off-chain effect predicate. The recipient and the spent-leaf key are
+        // parameters so the SDK can place the output and the mapping entry; the
+        // covenant then proves both match the claimant and the Merkle leaf.
+        require(checkSig(claimantSig, claimantPk));
+        recipient.transfer(int(amount));
+        require(this.assetCategory == bytes32(0));
+        require(amount > 0);
+        require(bytes20(recipient) == claimant);
+        require(hash160(claimantPk) == claimant);
+        bytes32 leaf = settle(claimant, amount, sibling0, sibling1, sibling2, sibling3, path, leafKey);
+        require(this.balance >= int(amount));
+        emit Claimed(claimant, amount, leaf, this.epoch);
+    }
+
+    function claimToken(
+        bytes32 category,
+        bytes20 claimant,
+        uint64 amount,
+        bytes32 sibling0,
+        bytes32 sibling1,
+        bytes32 sibling2,
+        bytes32 sibling3,
+        uint8 path,
+        pubkey claimantPk,
+        sig claimantSig,
+        address payable recipient,
+        bytes32 leafKey
+    ) public {
+        require(checkSig(claimantSig, claimantPk));
+        this.tokens[category].transfer(bytes(recipient), amount);
+        require(category != bytes32(0));
+        require(category == this.assetCategory);
+        require(amount > 0);
+        require(bytes20(recipient) == claimant);
+        require(hash160(claimantPk) == claimant);
+        bytes32 leaf = settle(claimant, amount, sibling0, sibling1, sibling2, sibling3, path, leafKey);
+        require(this.tokens[category].tokenAmount >= amount);
+        emit Claimed(claimant, amount, leaf, this.epoch);
+    }
+
+    function leafFor(bytes20 claimant, uint64 amount) internal returns (bytes32) {
+        return sha256(hex"01" + claimant + bytes8(amount) + bytes4(this.epoch) + this.assetCategory);
+    }
+
+    function settle(
+        bytes20 claimant,
+        uint64 amount,
+        bytes32 sibling0,
+        bytes32 sibling1,
+        bytes32 sibling2,
+        bytes32 sibling3,
+        uint8 path,
+        bytes32 leafKey
+    ) internal returns (bytes32) {
+        bytes32 leaf = leafFor(claimant, amount);
+        require(leafKey == leaf);
+        bytes32 node = fold(leaf, sibling0, sibling1, sibling2, sibling3, path);
+        require(node == this.root);
+        require(this.claimed[leafKey] == false);
+        this.claimed[leafKey] = true;
+        return leaf;
+    }
+
+    function fold(
+        bytes32 node,
+        bytes32 sibling0,
+        bytes32 sibling1,
+        bytes32 sibling2,
+        bytes32 sibling3,
+        uint8 path
+    ) internal returns (bytes32) {
+        int bits = int(path);
+        node = (bits & 1) == 1 ? sha256(sibling0 + node) : sha256(node + sibling0);
+        node = (bits & 2) == 2 ? sha256(sibling1 + node) : sha256(node + sibling1);
+        node = (bits & 4) == 4 ? sha256(sibling2 + node) : sha256(node + sibling2);
+        node = (bits & 8) == 8 ? sha256(sibling3 + node) : sha256(node + sibling3);
+        return node;
+    }
+}
