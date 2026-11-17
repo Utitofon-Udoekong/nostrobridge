@@ -1,0 +1,201 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  InMemoryReplayStore,
+  buildAuthSigningMessage,
+  createChallenge,
+  createUnsignedAuthEvent,
+  verifyAuthResponse,
+  verifyBchMessage,
+  type AuthChallenge,
+  type AuthResult,
+} from "@bchblaze/identity";
+import { useWallet } from "@/components/WalletContext";
+import { Button, Card, CodeBlock, ErrorBox, Field, Pill, TextArea, TextInput } from "@/components/ui";
+import { parseSignedEventJson, signWithNip07 } from "@/lib/nostr";
+import { signPaytacaMessage } from "@/lib/bch-wallet";
+
+export default function AuthenticatePage() {
+  const w = useWallet();
+  const store = useMemo(() => new InMemoryReplayStore(), []);
+
+  useEffect(() => {
+    setAudience(window.location.origin);
+  }, []);
+  const [audience, setAudience] = useState("https://nostrobridge.local");
+  const [challenge, setChallenge] = useState<AuthChallenge | null>(null);
+  const [eventJson, setEventJson] = useState("");
+  const [bchSig, setBchSig] = useState("");
+  const [result, setResult] = useState<AuthResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function issue() {
+    setError(null);
+    setResult(null);
+    if (!w.binding) {
+      setError("Create or load a verified binding first (/link).");
+      return;
+    }
+    const next = createChallenge({
+      audience,
+      action: "authenticate",
+      bindingId: w.binding.statement.bindingId,
+      ttlSeconds: 120,
+    });
+    setChallenge(next);
+    setEventJson("");
+    setBchSig("");
+  }
+
+  async function signNostr() {
+    if (!challenge || !w.binding) return;
+    setError(null);
+    try {
+      const unsigned = createUnsignedAuthEvent(challenge, w.binding.statement.nostrPubkey);
+      const signed = await signWithNip07(unsigned);
+      setEventJson(JSON.stringify(signed, null, 2));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function signBch() {
+    if (!challenge) return;
+    setError(null);
+    try {
+      const sig = await signPaytacaMessage(buildAuthSigningMessage(challenge));
+      setBchSig(sig);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function check(replay = false) {
+    if (!challenge || !w.binding) return;
+    setError(null);
+    try {
+      const event = parseSignedEventJson(eventJson);
+      const auth = await verifyAuthResponse(
+        challenge,
+        {
+          challengeId: challenge.challengeId,
+          event,
+          bchSignature: bchSig.trim() || undefined,
+        },
+        w.binding,
+        {
+          replayStore: store,
+          expectedAudience: audience,
+        }
+      );
+      setResult(auth);
+      if (replay && auth.status !== "replay_detected") {
+        setError("Replay did not trigger replay_detected — unexpected.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl leading-tight text-white sm:text-5xl">Challenge-response</h1>
+        <p className="mt-2 max-w-2xl text-slate-300">
+          A published binding is not a session. This issues a 120-second challenge
+          bound to this origin, a unique nonce, and the bindingId. The Nostr key
+          (optionally the BCH key) must sign that exact payload. A second submit
+          of the same challenge is replay.
+        </p>
+      </div>
+
+      <Card>
+        <Field label="Audience (origin)">
+          <TextInput value={audience} onChange={(e) => setAudience(e.target.value)} />
+        </Field>
+        <Button className="mt-3" type="button" onClick={issue}>
+          Issue challenge
+        </Button>
+        {challenge ? (
+          <div className="mt-4 space-y-2">
+            <p className="font-mono text-xs text-slate-300">
+              challengeId {challenge.challengeId}
+              <br />
+              nonce {challenge.nonce}
+              <br />
+              expires {new Date(challenge.expiresAt * 1000).toLocaleTimeString()}
+            </p>
+            <CodeBlock value={buildAuthSigningMessage(challenge)} />
+          </div>
+        ) : null}
+      </Card>
+
+      <Card>
+        <h2 className="text-lg font-semibold text-white">Sign the challenge</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button type="button" disabled={!challenge} onClick={() => void signNostr()}>
+            Sign with NIP-07
+          </Button>
+          <Button type="button" variant="secondary" disabled={!challenge} onClick={() => void signBch()}>
+            Optional: also sign with Paytaca
+          </Button>
+        </div>
+        <Field label="Signed auth event (kind 22243)">
+          <TextArea rows={8} value={eventJson} onChange={(e) => setEventJson(e.target.value)} />
+        </Field>
+        <Field label="Optional BCH signature">
+          <TextArea rows={2} value={bchSig} onChange={(e) => setBchSig(e.target.value)} />
+        </Field>
+        {challenge && bchSig && w.binding ? (
+          <p className="text-xs text-slate-400">
+            BCH check:{" "}
+            {verifyBchMessage(
+              buildAuthSigningMessage(challenge),
+              w.binding.statement.bchAddress,
+              bchSig
+            ).valid
+              ? "matches bound address"
+              : "does not match"}
+          </p>
+        ) : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button type="button" disabled={!challenge || !eventJson} onClick={() => void check(false)}>
+            Verify response
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            disabled={!challenge || !eventJson}
+            onClick={() => void check(true)}
+          >
+            Submit the same challenge again (replay)
+          </Button>
+        </div>
+      </Card>
+
+      {result ? (
+        <Card>
+          <Pill tone={result.ok ? "ok" : "bad"}>{result.status}</Pill>
+          <ul className="mt-3 list-disc pl-5 text-sm text-slate-300">
+            {result.details.map((d) => (
+              <li key={d}>{d}</li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      <Card>
+        <h2 className="text-lg font-semibold text-white">Adversarial notes</h2>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">
+          <li>Wrong audience → audience_mismatch.</li>
+          <li>After expiry (120s) → expired_challenge.</li>
+          <li>Same challengeId+nonce twice → replay_detected (seen-set).</li>
+          <li>Nostr key that is not the bound pubkey → signature_invalid.</li>
+          <li>Auth events are kind 22243 (ephemeral) and are not published.</li>
+        </ul>
+      </Card>
+      <ErrorBox message={error} />
+    </div>
+  );
+}
