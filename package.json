@@ -1,0 +1,16 @@
+{
+  "name": "nostrobridge",
+  "private": true,
+  "description": "BCH BLAZE 2026 — Nostrobridge: Bitcoin Cash ↔ Nostr identity binding",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --filter @bchblaze/identity build && pnpm --filter @bchblaze/nostrobridge dev",
+    "build": "pnpm --filter @bchblaze/identity build && pnpm --filter @bchblaze/nostrobridge build",
+    "test": "pnpm --filter @bchblaze/identity test",
+    "test:contracts": "pnpm --filter @bchblaze/contracts test",
+    "typecheck": "pnpm --filter @bchblaze/identity typecheck"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
