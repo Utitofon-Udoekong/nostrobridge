@@ -101,13 +101,8 @@ export default function AuthenticatePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-tight text-white sm:text-5xl">Challenge-response</h1>
-        <p className="mt-2 max-w-2xl text-slate-300">
-          A published binding is not a session. This issues a 120-second challenge
-          bound to this origin, a unique nonce, and the bindingId. The Nostr key
-          (optionally the BCH key) must sign that exact payload. A second submit
-          of the same challenge is replay.
-        </p>
+        <h1>Authenticate</h1>
+        <p className="lede">A published binding is not a session. Issue a challenge for this site and sign it once.</p>
       </div>
 
       <Card>
@@ -119,7 +114,7 @@ export default function AuthenticatePage() {
         </Button>
         {challenge ? (
           <div className="mt-4 space-y-2">
-            <p className="font-mono text-xs text-slate-300">
+            <p className="font-mono text-xs text-ink/70">
               challengeId {challenge.challengeId}
               <br />
               nonce {challenge.nonce}
@@ -132,23 +127,23 @@ export default function AuthenticatePage() {
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-white">Sign the challenge</h2>
+        <h2>Sign</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" disabled={!challenge} onClick={() => void signNostr()}>
             Sign with NIP-07
           </Button>
           <Button type="button" variant="secondary" disabled={!challenge} onClick={() => void signBch()}>
-            Optional: also sign with Paytaca
+            Sign with Paytaca
           </Button>
         </div>
-        <Field label="Signed auth event (kind 22243)">
+        <Field label="Auth event">
           <TextArea rows={8} value={eventJson} onChange={(e) => setEventJson(e.target.value)} />
         </Field>
         <Field label="Optional BCH signature">
           <TextArea rows={2} value={bchSig} onChange={(e) => setBchSig(e.target.value)} />
         </Field>
         {challenge && bchSig && w.binding ? (
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-ink/60">
             BCH check:{" "}
             {verifyBchMessage(
               buildAuthSigningMessage(challenge),
@@ -169,7 +164,7 @@ export default function AuthenticatePage() {
             disabled={!challenge || !eventJson}
             onClick={() => void check(true)}
           >
-            Submit the same challenge again (replay)
+            Submit again
           </Button>
         </div>
       </Card>
@@ -177,7 +172,7 @@ export default function AuthenticatePage() {
       {result ? (
         <Card>
           <Pill tone={result.ok ? "ok" : "bad"}>{result.status}</Pill>
-          <ul className="mt-3 list-disc pl-5 text-sm text-slate-300">
+          <ul className="mt-3 space-y-1 text-sm text-ink/80">
             {result.details.map((d) => (
               <li key={d}>{d}</li>
             ))}
@@ -185,16 +180,6 @@ export default function AuthenticatePage() {
         </Card>
       ) : null}
 
-      <Card>
-        <h2 className="text-lg font-semibold text-white">Adversarial notes</h2>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">
-          <li>Wrong audience → audience_mismatch.</li>
-          <li>After expiry (120s) → expired_challenge.</li>
-          <li>Same challengeId+nonce twice → replay_detected (seen-set).</li>
-          <li>Nostr key that is not the bound pubkey → signature_invalid.</li>
-          <li>Auth events are kind 22243 (ephemeral) and are not published.</li>
-        </ul>
-      </Card>
       <ErrorBox message={error} />
     </div>
   );

@@ -8,7 +8,7 @@ import {
   type IdentityBinding,
 } from "@bchblaze/identity";
 import { useWallet } from "@/components/WalletContext";
-import { Button, Card, ErrorBox, Field, Pill, TextInput } from "@/components/ui";
+import { Button, Card, ErrorBox, Field, TextInput } from "@/components/ui";
 import { bip21Uri, explorerAddressUrl, parseNostrPubkey, toNpub } from "@/lib/format";
 import { qrDataUrl } from "@/lib/qr";
 import { siteConfig } from "@/lib/config";
@@ -33,11 +33,9 @@ export default function PayPage() {
       return;
     }
     if (checked.binding.statement.bchNetwork !== w.network) {
-      setNote(
-        `Binding is on ${checked.binding.statement.bchNetwork}; this UI is set to ${w.network}. Switch network in Relays if this is intentional.`
-      );
+      setNote(`${checked.binding.statement.bchNetwork}, this page is ${w.network}.`);
     } else {
-      setNote(`${source}. BIP21 below is a real ${checked.binding.statement.bchNetwork} payment request — send only what you intend.`);
+      setNote(source);
     }
     setBinding(checked.binding);
     setQr(await qrDataUrl(bip21Uri(checked.binding.statement.bchAddress, amount)));
@@ -84,28 +82,26 @@ export default function PayPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-tight text-white sm:text-5xl">Pay a Nostr identity</h1>
-        <p className="mt-2 max-w-2xl text-slate-300">
-          Resolve an npub to a BCH address only after both signatures verify. Then
-          this page prepares a small real {w.network} BIP21 transaction. Nothing is
-          auto-sent.
+        <h1>Pay</h1>
+        <p className="lede">
+          Resolve an npub to a Bitcoin Cash address only after both signatures check. {w.network}. Nothing is sent
+          until you open a wallet.
         </p>
-        <Pill tone={w.network === "mainnet" ? "ok" : "warn"}>{w.network}</Pill>
       </div>
 
       <Card>
-        <Field label="Recipient npub">
+        <Field label="npub">
           <TextInput value={npub} placeholder="npub1…" onChange={(e) => setNpub(e.target.value)} />
         </Field>
-        <Field label="Amount (BCH)" hint="Default is a few cents. Change it before scanning.">
+        <Field label="Amount (BCH)">
           <TextInput value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" disabled={busy} onClick={() => void resolve()}>
-            {busy ? "Resolving…" : "Resolve & verify"}
+            {busy ? "Resolving…" : "Resolve"}
           </Button>
           <Button type="button" variant="secondary" onClick={() => void useLocal()}>
-            Use locally stored binding
+            Local
           </Button>
           <Button type="button" variant="secondary" disabled={!binding} onClick={() => void refreshQr()}>
             Refresh QR
@@ -115,19 +111,19 @@ export default function PayPage() {
 
       {binding ? (
         <Card>
-          <h2 className="text-lg font-semibold text-white">Verified payment target</h2>
-          <p className="mt-1 font-mono text-xs text-nostr-400">{toNpub(binding.statement.nostrPubkey)}</p>
-          <p className="mt-2 break-all font-mono text-sm text-bch-400">{binding.statement.bchAddress}</p>
-          <p className="mt-3 break-all font-mono text-xs text-slate-300">{uri}</p>
+          <h2>Recipient</h2>
+          <p className="mt-2 break-all font-mono text-xs text-ink/70">{toNpub(binding.statement.nostrPubkey)}</p>
+          <p className="mt-2 break-all font-mono text-sm">{binding.statement.bchAddress}</p>
+          <p className="mt-3 break-all font-mono text-xs text-ink/70">{uri}</p>
           {qr ? (
-            <img src={qr} alt="BIP21 payment QR" className="mt-4 rounded-lg bg-white p-2" width={220} height={220} />
+            <img src={qr} alt="BIP21 payment QR" className="mt-4 border border-ink bg-paper p-2" width={220} height={220} />
           ) : null}
           <div className="mt-4 flex flex-wrap gap-3">
             <a
-              className="rounded-full bg-bch-500 px-4 py-2 text-sm font-medium text-ink-950 no-underline hover:bg-bch-400"
+              className="bg-ink px-3 py-1.5 text-sm text-paper no-underline hover:opacity-80"
               href={uri}
             >
-              Open in wallet (BIP21)
+              Open wallet
             </a>
             <a
               href={explorerAddressUrl(binding.statement.bchAddress, binding.statement.bchNetwork)}
@@ -137,25 +133,11 @@ export default function PayPage() {
               Explorer
             </a>
           </div>
-          <p className="mt-3 text-xs text-slate-400">
-            The prepared transaction is the BIP21 URI + QR. Open it in Paytaca, Electron
-            Cash, or any cashaddr wallet. WizardConnect can later sign a constructed
-            raw transaction, but this demo never auto-broadcasts. Throwaway sample
-            addresses are not payment targets.
-          </p>
-          <details className="mt-3 text-xs text-slate-400">
-            <summary className="cursor-pointer text-slate-200">Adversarial notes</summary>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>Unverified npub → no URI (this page refuses to guess an address).</li>
-              <li>Tampered JSON that fails verify() → no URI.</li>
-              <li>Network mismatch is labeled; chipnet vs mainnet is never implicit.</li>
-            </ul>
-          </details>
         </Card>
       ) : null}
 
       <ErrorBox message={error} />
-      {note ? <p className="text-sm text-amber-200">{note}</p> : null}
+      {note ? <p className="text-sm text-ink/70">{note}</p> : null}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {
   prefixForNetwork,
 } from "@bchblaze/identity";
 import { useWallet } from "./WalletContext";
-import { Button, ErrorBox, Pill } from "./ui";
+import { Button, ErrorBox } from "./ui";
 import { cashaddrFromPubkeyBytes } from "@/lib/format";
 
 export function WizardConnectPanel() {
@@ -46,21 +46,16 @@ export function WizardConnectPanel() {
           onClick={() => wc.connect()}
           disabled={wc.state === "connecting"}
         >
-          {wc.state === "connected" ? "Reconnect WizardConnect" : "Connect with WizardConnect"}
+          {wc.state === "connected" ? "Reconnect" : "WizardConnect"}
         </Button>
         {wc.state === "connected" ? (
           <Button type="button" variant="ghost" onClick={() => void wc.disconnect()}>
             Disconnect
           </Button>
         ) : null}
-        <Pill tone={wc.state === "connected" ? "ok" : "neutral"}>{wc.state}</Pill>
-        {wc.walletName ? <span className="text-xs text-slate-400">{wc.walletName}</span> : null}
+        <span className="text-xs text-ink/60">{wc.state}</span>
+        {wc.walletName ? <span className="text-xs text-ink/60">{wc.walletName}</span> : null}
       </div>
-      <p className="text-xs text-slate-400">
-        Scan the QR with Paytaca or Selene. WizardConnect shares xpubs and can sign
-        payments; it does not yet expose <code>bch_signMessage</code>, so identity
-        signing still uses Paytaca or an Electron Cash paste.
-      </p>
       {wc.uri && wc.qrUri ? (
         <WizardConnectQRDialog
           show={wc.state === "connecting"}

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { exportIdentityBinding, prepareCashTokenCommitment } from "@bchblaze/identity";
-import { planIdentityAnchor, IDENTITY_ANCHOR_SOURCE } from "@bchblaze/contracts";
+import { prepareCashTokenCommitment } from "@bchblaze/identity";
+import { planIdentityAnchor } from "@bchblaze/contracts";
 import { useWallet } from "@/components/WalletContext";
-import { Button, Card, CodeBlock, ErrorBox, Pill } from "@/components/ui";
+import { Button, Card, CodeBlock, ErrorBox } from "@/components/ui";
 
 export default function AnchorPage() {
   const w = useWallet();
@@ -41,48 +41,20 @@ export default function AnchorPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-tight text-white sm:text-5xl">CashTokens anchor</h1>
-        <p className="mt-2 max-w-2xl text-slate-300">
-          Optional stretch path: pin the verified binding as a 32-byte CashTokens NFT
-          commitment. A SolidCash <code>IdentityAnchor</code> skeleton in{" "}
-          <code>packages/contracts</code> stores that hash in contract state.
-        </p>
+        <h1>Anchor</h1>
+        <p className="lede">Turn a verified binding into a 32-byte CashTokens commitment. This does not broadcast.</p>
       </div>
 
       <Card>
-        <h2 className="text-lg font-semibold text-white">Prepare commitment</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Runs <code>verify()</code> first. Unverified bindings cannot be committed.
-          This button does not broadcast a transaction; it produces the exact bytes a
-          genesis NFT would carry.
-        </p>
-        <Button className="mt-4" type="button" onClick={prepare}>
-          Prepare on-chain anchor
+        <Button type="button" onClick={prepare}>
+          Prepare
         </Button>
-        {commitment ? (
-          <div className="mt-4 space-y-2">
-            <Pill tone="ok">32-byte commitment</Pill>
-            <p className="break-all font-mono text-sm text-bch-400">{commitment}</p>
-          </div>
-        ) : null}
+        {commitment ? <p className="mt-3 break-all font-mono text-xs text-ink/80">{commitment}</p> : null}
       </Card>
 
       {planJson ? (
         <Card>
-          <h2 className="text-lg font-semibold text-white">SolidCash constructor args</h2>
           <CodeBlock value={planJson} />
-        </Card>
-      ) : null}
-
-      <Card>
-        <h2 className="text-lg font-semibold text-white">IdentityAnchor.scash</h2>
-        <CodeBlock value={IDENTITY_ANCHOR_SOURCE} />
-      </Card>
-
-      {w.binding ? (
-        <Card>
-          <h2 className="text-lg font-semibold text-white">Bound record used</h2>
-          <CodeBlock value={exportIdentityBinding(w.binding)} />
         </Card>
       ) : null}
 

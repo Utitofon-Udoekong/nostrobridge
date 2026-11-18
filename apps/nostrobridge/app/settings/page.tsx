@@ -27,15 +27,12 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-tight text-white sm:text-5xl">Relays & network</h1>
-        <p className="mt-2 max-w-2xl text-slate-300">
-          Discovery talks to these relays. They are untrusted. Change them to match
-          your NIP-65 list if you have one.
-        </p>
+        <h1>Relays</h1>
+        <p className="lede">Where to look a binding up. Changing them does not change how a signature is checked.</p>
       </div>
 
       <Card>
-        <h2 className="text-lg font-semibold text-white">Network</h2>
+        <h2>Network</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {NETWORKS.map((n) => (
             <Button
@@ -48,14 +45,10 @@ export default function SettingsPage() {
             </Button>
           ))}
         </div>
-        <p className="mt-3 text-sm text-slate-400">
-          Chipnet cashaddrs use the <code>bchtest:</code> prefix. Pay-to-identity
-          labels the network on the payment screen so mainnet is never ambiguous.
-        </p>
       </Card>
 
       <Card>
-        <Field label="Relay URLs (one per line)">
+        <Field label="Relays">
           <TextArea
             rows={8}
             value={text}

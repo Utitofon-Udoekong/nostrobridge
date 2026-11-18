@@ -5,15 +5,15 @@ import { useState } from "react";
 import { normalizeCashAddress } from "@bchblaze/identity";
 import { connectPaytaca } from "@/lib/bch-wallet";
 import { connectNip07 } from "@/lib/nostr";
-import { parseNostrPubkey, shortHex, toNpub } from "@/lib/format";
+import { parseNostrPubkey, toNpub } from "@/lib/format";
 import { siteConfig } from "@/lib/config";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useWallet } from "./WalletContext";
-import { Button, Card, ErrorBox, Field, Pill, TextInput } from "./ui";
+import { Button, Card, ErrorBox, Field, TextInput } from "./ui";
 
 const WizardConnectPanel = dynamic(
   () => import("./WizardConnectPanel").then((m) => m.WizardConnectPanel),
-  { ssr: false, loading: () => <p className="text-sm text-slate-400">Loading WizardConnect…</p> }
+  { ssr: false, loading: () => <p className="text-sm text-ink/60">Loading</p> }
 );
 
 export function ConnectPanel() {
@@ -46,24 +46,18 @@ export function ConnectPanel() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card accent="bch">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-bch-400">Bitcoin Cash</p>
-        <h2 className="mt-1 text-lg font-medium text-white">Spending identity</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Paytaca signs the statement in-wallet. WizardConnect fills the address from
-          xpubs. Electron Cash works as a paste-signature fallback.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+      <Card>
+        <h2>Bitcoin Cash</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" onClick={() => void onPaytaca()}>
-            Connect Paytaca
+            Paytaca
           </Button>
-          {w.paytacaDetected === true ? <Pill tone="ok">Detected</Pill> : null}
           {w.paytacaDetected === false ? (
             <a
               href={siteConfig.paytacaInstallUrl}
               target="_blank"
               rel="noreferrer"
-              className="self-center text-sm text-bch-400 underline decoration-bch-500/40 underline-offset-4"
+              className="self-center text-sm"
             >
               Install Paytaca
             </a>
@@ -72,17 +66,14 @@ export function ConnectPanel() {
         <div className="mt-4">
           <ErrorBoundary
             fallback={
-              <p className="text-sm text-amber-200">
-                WizardConnect failed to load in this browser. Use Paytaca or paste a
-                cashaddr instead.
-              </p>
+              <p className="text-sm">WizardConnect failed to load.</p>
             }
           >
             <WizardConnectPanel />
           </ErrorBoundary>
         </div>
         <div className="mt-4 space-y-2">
-          <Field label="Or paste a cashaddr" hint="P2PKH q… or token-aware z…">
+          <Field label="Cashaddr">
             <TextInput
               value={bchPaste}
               placeholder="bitcoincash:q…"
@@ -102,33 +93,27 @@ export function ConnectPanel() {
               }
             }}
           >
-            Use this address
+            Use address
           </Button>
         </div>
         {w.bchAddress ? (
-          <p className="mt-3 break-all font-mono text-xs text-bch-400">
-            {w.bchAddress} <Pill>{w.bchSource ?? "unknown"}</Pill>
+          <p className="mt-3 break-all font-mono text-xs text-ink/70">
+            {w.bchAddress}
+            {w.bchSource ? ` · ${w.bchSource}` : ""}
           </p>
         ) : null}
       </Card>
 
-      <Card accent="nostr">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-nostr-400">Nostr</p>
-        <h2 className="mt-1 text-lg font-medium text-white">Social identity</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          NIP-07 (nos2x, Alby) signs the binding event. Without an extension, paste an
-          npub and later paste the signed event JSON.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+      <Card>
+        <h2>Nostr</h2>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button type="button" onClick={() => void onNip07()}>
-            Connect NIP-07
+            NIP-07
           </Button>
-          <Pill tone={w.nip07Detected ? "ok" : "warn"}>
-            {w.nip07Detected ? "Extension detected" : "No extension — paste fallback"}
-          </Pill>
+          <span className="text-xs text-ink/60">{w.nip07Detected ? "Extension" : "Paste"}</span>
         </div>
         <div className="mt-4 space-y-2">
-          <Field label="Or paste npub / hex pubkey">
+          <Field label="npub">
             <TextInput
               value={npubPaste}
               placeholder="npub1…"
@@ -148,14 +133,13 @@ export function ConnectPanel() {
               }
             }}
           >
-            Use this pubkey
+            Use pubkey
           </Button>
         </div>
         {w.nostrPubkey ? (
-          <p className="mt-3 break-all font-mono text-xs text-nostr-400">
+          <p className="mt-3 break-all font-mono text-xs text-ink/70">
             {toNpub(w.nostrPubkey)}
-            <br />
-            {shortHex(w.nostrPubkey, 12)} <Pill>{w.nostrSource ?? "unknown"}</Pill>
+            {w.nostrSource ? ` · ${w.nostrSource}` : ""}
           </p>
         ) : null}
       </Card>

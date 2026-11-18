@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "./Logo";
 
 const LINKS = [
-  { href: "/", label: "Overview" },
   { href: "/link", label: "Bind" },
   { href: "/verify", label: "Verify" },
   { href: "/authenticate", label: "Auth" },
@@ -16,13 +16,13 @@ const LINKS = [
 export function Nav() {
   const path = usePathname();
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-ink-950/75 backdrop-blur-md" suppressHydrationWarning>
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 text-white no-underline">
-          <Mark />
-          <span className="text-[15px] font-semibold tracking-tight">Nostrobridge</span>
+    <header className="border-b border-ink lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-6 py-4 lg:flex-col lg:items-stretch lg:px-6 lg:py-8">
+        <Link href="/" className="flex items-center gap-3 text-ink no-underline">
+          <Logo />
+          <span className="text-base font-medium tracking-tight">Nostrobridge</span>
         </Link>
-        <nav className="no-scrollbar flex gap-0.5 overflow-x-auto sm:min-w-0 sm:flex-1 sm:justify-end">
+        <nav className="flex flex-wrap gap-x-5 gap-y-2 lg:mt-8 lg:flex-col lg:gap-1">
           {LINKS.map((link) => {
             const active = path === link.href;
             return (
@@ -30,11 +30,7 @@ export function Nav() {
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-sm no-underline transition ${
-                  active
-                    ? "bg-white text-ink-950"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
-                }`}
+                className={`py-1 text-sm no-underline ${active ? "underline decoration-ink decoration-2 underline-offset-8" : "text-ink/60"}`}
               >
                 {link.label}
               </Link>
@@ -43,16 +39,5 @@ export function Nav() {
         </nav>
       </div>
     </header>
-  );
-}
-
-function Mark() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden className="shrink-0">
-      <rect width="28" height="28" rx="9" fill="#101820" />
-      <path d="M6.5 17.5c3.2-7 11.8-7 15 0" stroke="#3ee6b0" strokeWidth="1.6" fill="none" />
-      <circle cx="7.5" cy="11" r="2.1" fill="#0ac18e" />
-      <circle cx="20.5" cy="11" r="2.1" fill="#8b7cff" />
-    </svg>
   );
 }

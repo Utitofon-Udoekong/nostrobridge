@@ -16,7 +16,7 @@ import {
 } from "@bchblaze/identity";
 import { ConnectPanel } from "@/components/ConnectPanel";
 import { useWallet } from "@/components/WalletContext";
-import { Button, Card, CodeBlock, ErrorBox, Field, Pill, TextArea } from "@/components/ui";
+import { Button, Card, CodeBlock, ErrorBox, Field, TextArea } from "@/components/ui";
 import { signPaytacaMessage } from "@/lib/bch-wallet";
 import { parseSignedEventJson, signWithNip07 } from "@/lib/nostr";
 import { copyText } from "@/lib/format";
@@ -138,31 +138,23 @@ export default function LinkPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-tight text-white sm:text-5xl">Create a binding</h1>
-        <p className="mt-2 max-w-2xl text-slate-300">
-          Private keys never touch this page. Paytaca / Electron Cash signs the BCH
-          message. NIP-07 signs the Nostr event. Network:{" "}
-          <Pill>{w.network}</Pill>
+        <h1>Bind</h1>
+        <p className="lede">
+          Sign one statement with a Bitcoin Cash wallet and a Nostr key. This page is on {w.network}.
         </p>
       </div>
 
       <ConnectPanel />
 
       <Card>
-        <h2 className="text-lg font-semibold text-white">Generate canonical statement</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Binding ID is SHA-256 of the sorted JSON fields. Both keys will sign the
-          exact domain-separated message below.
-        </p>
-        <Button className="mt-4" type="button" disabled={!ready} onClick={generate}>
-          Generate statement + Binding ID
+        <h2>Statement</h2>
+        <Button className="mt-3" type="button" disabled={!ready} onClick={generate}>
+          Generate
         </Button>
         {draft ? (
           <div className="mt-4 space-y-3">
-            <p className="font-mono text-xs text-bch-400">
-              bindingId {draft.statement.bindingId}
-            </p>
-            <Field label="Exact BCH signmessage text (Electron Cash: Tools → Sign/verify message)">
+            <p className="break-all font-mono text-xs text-ink/70">{draft.statement.bindingId}</p>
+            <Field label="Message to sign">
               <CodeBlock value={draft.bchMessage} />
             </Field>
           </div>
@@ -170,16 +162,13 @@ export default function LinkPage() {
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-white">Sign with BCH</h2>
+        <h2>Bitcoin Cash</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" disabled={!draft} onClick={() => void signBch()}>
             Sign with Paytaca
           </Button>
         </div>
-        <Field
-          label="Or paste the base64 signature"
-          hint="Must verify against the connected cashaddr and the exact message."
-        >
+        <Field label="Signature">
           <TextArea
             rows={3}
             value={bchSig}
@@ -194,25 +183,25 @@ export default function LinkPage() {
           disabled={!draft || !bchSig}
           onClick={() => checkBchPaste(bchSig)}
         >
-          Check pasted BCH signature
+          Check signature
         </Button>
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-white">Sign with Nostr</h2>
+        <h2>Nostr</h2>
         {unsignedPreview ? (
-          <Field label={`Unsigned event template (kind ${BINDING_KIND})`}>
+          <Field label={`Unsigned event · ${BINDING_KIND}`}>
             <CodeBlock value={unsignedPreview} />
           </Field>
         ) : (
-          <p className="text-sm text-slate-400">BCH signature required first so the i-tag can carry it.</p>
+          <p className="text-sm text-ink/60">Sign Bitcoin Cash first.</p>
         )}
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" disabled={!draft || !bchSig} onClick={() => void signNostr()}>
             Sign with NIP-07
           </Button>
         </div>
-        <Field label="Or paste the signed event JSON">
+        <Field label="Signed event">
           <TextArea
             rows={8}
             value={eventJson}
@@ -226,16 +215,13 @@ export default function LinkPage() {
           disabled={!draft || !bchSig || !eventJson}
           onClick={applyPastedEvent}
         >
-          Assemble from pasted event
+          Use pasted event
         </Button>
       </Card>
 
       {binding ? (
         <Card>
-          <h2 className="text-lg font-semibold text-white">Verified locally</h2>
-          <p className="mt-1 text-sm text-slate-300">
-            This site is not an authority. The record below is what you export or publish.
-          </p>
+          <h2>Record</h2>
           <CodeBlock value={exportIdentityBinding(binding)} />
           <div className="mt-3 flex flex-wrap gap-2">
             <Button type="button" onClick={() => void publish()}>
@@ -254,7 +240,7 @@ export default function LinkPage() {
       ) : null}
 
       <ErrorBox message={error} />
-      {status ? <p className="text-sm text-bch-400">{status}</p> : null}
+      {status ? <p className="text-sm text-ink/70">{status}</p> : null}
     </div>
   );
 }

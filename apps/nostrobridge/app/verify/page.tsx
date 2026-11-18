@@ -107,16 +107,12 @@ export default function VerifyPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-tight text-white sm:text-5xl">Independent verifier</h1>
-        <p className="mt-2 max-w-2xl text-slate-300">
-          This page only calls <code className="text-bch-400">verify()</code> from
-          @bchblaze/identity in your browser. It never asks a backend whether a
-          binding is valid. Relays are queried for discovery, then discarded.
-        </p>
+        <h1>Verify</h1>
+        <p className="lede">Paste a record or look one up by npub. The check runs here, not on a server.</p>
       </div>
 
       <Card>
-        <h2 className="text-lg font-semibold text-white">Lookup by npub</h2>
+        <h2>npub</h2>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <TextInput
             value={npub}
@@ -124,44 +120,40 @@ export default function VerifyPage() {
             onChange={(e) => setNpub(e.target.value)}
           />
           <Button type="button" disabled={busy} onClick={() => void lookup()}>
-            Discover & verify
+            Discover
           </Button>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" variant="secondary" onClick={loadLocal}>
-            Use binding stored in this browser
+            Local
           </Button>
           <Button type="button" variant="secondary" disabled={busy} onClick={() => void loadSample()}>
-            Load throwaway sample binding
+            Sample
           </Button>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
-          The sample is a dual-signed fixture in this repo. Do not send BCH to its
-          address. It exists so judges can run verify + tamper without a wallet.
-        </p>
       </Card>
 
       <Card>
-        <Field label="Or paste IdentityBinding JSON / Nostr event JSON">
-          <TextArea rows={12} value={json} onChange={(e) => setJson(e.target.value)} />
+        <Field label="JSON">
+          <TextArea rows={6} value={json} onChange={(e) => setJson(e.target.value)} />
         </Field>
         <Button className="mt-3" type="button" onClick={verifyJson}>
-          Verify JSON offline
+          Verify
         </Button>
       </Card>
 
       {result ? (
         <Card>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-white">Result</h2>
+            <h2>Result</h2>
             <Pill tone={result.ok ? "ok" : "bad"}>{result.status}</Pill>
           </div>
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-300">
+          <ul className="mt-3 space-y-1 text-sm text-ink/80">
             {result.details.map((d) => (
               <li key={d}>{d}</li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-slate-400">
+          <p className="mt-3 text-xs text-ink/60">
             Nostr sig {result.nostrValid ? "valid" : "invalid"} · BCH sig{" "}
             {result.bchValid ? "valid" : "invalid"}
           </p>
@@ -174,12 +166,7 @@ export default function VerifyPage() {
       ) : null}
 
       <Card>
-        <h2 className="text-lg font-semibold text-white">Adversarial checks</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Judges: load a valid binding, then press a tamper button. The same
-          verify() function must fail closed. No private keys are involved.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             type="button"
             variant="danger"
@@ -189,7 +176,7 @@ export default function VerifyPage() {
               show(verify(tamperBindingId(source)));
             }}
           >
-            Tamper bindingId
+            Tamper id
           </Button>
           <Button
             type="button"
@@ -200,15 +187,9 @@ export default function VerifyPage() {
               show(verify(tamperAddress(source)));
             }}
           >
-            Tamper cashaddr
+            Tamper address
           </Button>
         </div>
-        <ul className="mt-4 space-y-2 text-sm text-slate-300">
-          <li>Wrong bindingId → SHA-256 mismatch (malformed / invalid_binding_id).</li>
-          <li>Swapped address without both new signatures → fail.</li>
-          <li>Kind 30078 (NIP-78) and kind 31234 (NIP-37 drafts) are rejected. Only kind {BINDING_KIND} verifies.</li>
-          <li>Expired expiresAt → expired. Future createdAt beyond skew → timestamp_invalid.</li>
-        </ul>
       </Card>
 
       <ErrorBox message={error} />
