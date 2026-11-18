@@ -25,13 +25,11 @@ The full byte layout is `packages/identity/protocol.md`.
 ## Key features
 
 - **Bind.** Connect a cashaddr and an npub, generate the statement, collect both signatures, and publish the event.
-- **Verify.** Paste a record or look one up by npub. The check runs in the browser. Sample, Tamper id, and Tamper address show a valid record and a record that fails closed.
+- **Verify.** Paste a record or look one up by npub. The check runs in the browser. Tamper id and Tamper address show that a changed record fails closed.
 - **Pay.** A verified npub resolves to its cashaddr. The page builds a BIP21 link and a QR code. Nothing is broadcast until a wallet sends it. The default network is mainnet and the default amount is 0.0001 BCH.
 - **Authenticate.** Issue a short challenge for this site, sign it once, and reject a replay.
 - **Anchor.** Turn a verified binding into a 32-byte CashTokens commitment. This prepares the commitment. It does not broadcast.
 - **Relays.** Choose where a binding is published and looked up. Changing relays does not change how a signature is checked.
-
-Do not send coins to the throwaway sample address in `apps/nostrobridge/public/sample-binding.json`.
 
 ## Tech stack
 
@@ -65,4 +63,4 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3000. From Verify, use Sample, then Tamper id and Tamper address.
+Open http://localhost:3000. Bind a real address and npub, then check that record on Verify.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HomeBanner } from "@/components/HomeBanner";
 import { Nav } from "@/components/Nav";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Providers>
+          <HomeBanner />
           <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
             <Nav />
             <main className="px-6 py-10 lg:px-12 lg:py-14">

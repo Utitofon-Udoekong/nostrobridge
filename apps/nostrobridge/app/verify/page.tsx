@@ -5,7 +5,6 @@ import {
   BINDING_KIND,
   discoverByAuthor,
   exportIdentityBinding,
-  importIdentityBinding,
   latestVerifiedBinding,
   verify,
   type IdentityBinding,
@@ -78,30 +77,11 @@ export default function VerifyPage() {
 
   function loadLocal() {
     if (!w.binding) {
-      setError("No local binding. Create one on /link or load the throwaway sample.");
+      setError("No local binding. Create one on Bind.");
       return;
     }
     setJson(exportIdentityBinding(w.binding));
     show(verify(w.binding), true);
-  }
-
-  async function loadSample() {
-    setError(null);
-    setBusy(true);
-    try {
-      const res = await fetch("/sample-binding.json");
-      if (!res.ok) throw new Error("Could not load sample-binding.json");
-      const text = await res.text();
-      const record = importIdentityBinding(text);
-      const checked = verify(record);
-      w.setBinding(record);
-      setJson(exportIdentityBinding(record));
-      show(checked, true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
   }
 
   return (
@@ -126,9 +106,6 @@ export default function VerifyPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" variant="secondary" onClick={loadLocal}>
             Local
-          </Button>
-          <Button type="button" variant="secondary" disabled={busy} onClick={() => void loadSample()}>
-            Sample
           </Button>
         </div>
       </Card>

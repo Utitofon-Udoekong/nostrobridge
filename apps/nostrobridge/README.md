@@ -7,4 +7,4 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3000. The throwaway fixture is `public/sample-binding.json`. Do not send BCH to that address.
+Open http://localhost:3000. Bind a real address and npub, then check that record on Verify.
