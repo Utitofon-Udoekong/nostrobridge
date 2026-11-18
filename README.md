@@ -1,62 +1,68 @@
-# Nostrobridge — BCH ↔ Nostr identity
+# Nostrobridge
 
-Production cryptographic binding of a Bitcoin Cash address to a Nostr npub, built for the Paytaca-sponsored **BCH BLAZE 2026** decentralized-identity bounty.
+![Nostrobridge](apps/nostrobridge/public/logo.jpg)
 
-Private keys never enter the app. Paytaca / Electron Cash signs the BCH message. NIP-07 signs the Nostr event. `verify()` is a pure function in `@bchblaze/identity`.
+Bind a Bitcoin Cash address to a Nostr key. One person, two signatures, and a check anyone can run without trusting this site.
 
-## 3-minute judge path
+Repository: https://github.com/Utitofon-Udoekong/nostrobridge
+
+## The problem
+
+A Bitcoin Cash address and a Nostr key are separate. A payer, a site, or a contract has no way to know they belong to the same person unless someone asserts it. A relay can deliver that assertion. It cannot make it true.
+
+Two public drafts were the wrong fit. Kind 30078 is author-only storage, so a payer never sees the record. Kind 31234 is an encrypted draft, and the Bitcoin Cash signature never rides in the event. Nostrobridge is one public record that carries both signatures over the same statement.
+
+## How it works
+
+The app builds one canonical statement: sorted JSON, no whitespace, then a SHA-256 binding id. The Bitcoin Cash wallet signs that string with `signmessage`. The Nostr key signs a kind **30734** event whose content is the same string. The Bitcoin Cash signature sits in a NIP-39 `i` tag, so the event alone is the proof.
+
+`verify()` in `@bchblaze/identity` checks both signatures offline. Kinds 30078 and 31234 fail closed. The stable `d` tag is `bchblaze-id/v1`, so a new binding replaces the old one for that key. A login is a separate ephemeral kind **22243** challenge. It is not the binding, and a repeated challenge is rejected.
+
+Private keys never enter the app. Paytaca or Electron Cash signs Bitcoin Cash. NIP-07, or a pasted event, signs Nostr.
+
+The full byte layout is `packages/identity/protocol.md`.
+
+## Key features
+
+- **Bind.** Connect a cashaddr and an npub, generate the statement, collect both signatures, and publish the event.
+- **Verify.** Paste a record or look one up by npub. The check runs in the browser. Sample, Tamper id, and Tamper address show a valid record and a record that fails closed.
+- **Pay.** A verified npub resolves to its cashaddr. The page builds a BIP21 link and a QR code. Nothing is broadcast until a wallet sends it. The default network is mainnet and the default amount is 0.0001 BCH.
+- **Authenticate.** Issue a short challenge for this site, sign it once, and reject a replay.
+- **Anchor.** Turn a verified binding into a 32-byte CashTokens commitment. This prepares the commitment. It does not broadcast.
+- **Relays.** Choose where a binding is published and looked up. Changing relays does not change how a signature is checked.
+
+Do not send coins to the throwaway sample address in `apps/nostrobridge/public/sample-binding.json`.
+
+## Tech stack
+
+| Piece | What it is |
+| --- | --- |
+| App | Next.js 15, React 18, TypeScript, Tailwind |
+| Identity | `@bchblaze/identity` — `@noble/curves`, `@noble/hashes`, `nostr-tools`, Vitest |
+| Wallets | Paytaca, WizardConnect (`@wizardconnect/*`), Electron Cash paste, NIP-07 |
+| Pay | BIP21 and a QR code. The app does not broadcast |
+| Anchor | SolidCash `IdentityAnchor` in `packages/contracts`. Prepared, not broadcast |
+| Package manager | pnpm 9.15, Node 18+ |
+
+## Hackathon requirements
+
+| Requirement | Where it is |
+| --- | --- |
+| Identity creation, keys stay in the wallets | `/link` |
+| Cryptographic binding of a cashaddr and an npub | Kind 30734, `d=bchblaze-id/v1`, both signatures over one statement |
+| Not kind 30078 or 31234 | `verify()` rejects both |
+| Decentralized discovery | Relays, `#d` and `#i=bch:<cashaddr>` |
+| Verification without a server | `/verify` and `packages/identity` tests |
+| Authentication that is not the binding | `/authenticate`, kind 22243, replay rejected |
+| Pay the bound address | `/pay`, BIP21, mainnet by default |
+| CashTokens commitment | `/anchor`, 32-byte commitment, not broadcast |
+| Reusable library | `@bchblaze/identity`, with `packages/identity/protocol.md` |
+
+## Run
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-1. **Overview** — bounty coverage and why kind 30078 is not used.
-2. **Verify without a wallet** (`/verify`) — click **Load throwaway sample binding**. Status must be `verified`. Press **Tamper bindingId** and **Tamper cashaddr**. Both must fail closed. Then run the Node command below on `apps/nostrobridge/public/sample-binding.json` so you are not trusting the site.
-3. **Create binding** (`/link`) — Connect Paytaca or WizardConnect (or paste a cashaddr) and NIP-07 (or paste npub). Generate the statement. Sign in Paytaca / Electron Cash. Sign the event (NIP-07 or paste). Publish to the configured relays.
-4. **Authenticate** (`/authenticate`) — Issue a challenge, sign it, verify, then **Submit the same challenge again**. Expect `replay_detected`.
-5. **Pay identity** (`/pay`) — paste an npub with a published binding, or **Use locally stored binding**. Only a verified address yields a BIP21 URI / QR. Default amount is `0.0001` BCH on **mainnet** (chipnet is a labeled toggle under Relays). Do not pay the throwaway sample address.
-6. **CashTokens** (`/anchor`) — **Prepare on-chain anchor** shows the 32-byte NFT commitment and the SolidCash `IdentityAnchor` constructor args. It does not broadcast.
-
-Banner links (Widget Factory, GitHub, EMBER2026 CashTokens address) are env-configurable. See `apps/nostrobridge/.env.example`.
-
-### Verify without trusting the site
-
-From the repo root, after `pnpm install` + `pnpm --filter @bchblaze/identity build`:
-
-```bash
-node --input-type=module -e "import { readFileSync } from 'node:fs'; import { verify } from '@bchblaze/identity'; console.log(verify(readFileSync('apps/nostrobridge/public/sample-binding.json','utf8')));"
-```
-
-Same `verify()` function the UI calls. Relays cannot make it return `ok`. Tamper any field in that JSON and it fails.
-
-## Bounty requirements
-
-| Requirement | Where |
-|---|---|
-| Identity creation & management | `/link` — keys stay in wallets |
-| Cryptographic identity binding | Dual proofs, kind **30734**, protocol `bchblaze-id` |
-| Decentralized discovery | Relays + `#d=bchblaze-id/v1` / `#i=bch:<cashaddr>` |
-| Verification & authentication | `/verify`, `/authenticate`, `packages/identity` tests |
-| Working demo + docs | this app, `packages/identity/protocol.md` |
-| Stretch: pay via identity | `/pay` BIP21 after local verify |
-| Stretch: CashTokens commitment | `packages/contracts` + `/anchor` |
-| Stretch: reusable library | `@bchblaze/identity` |
-
-## Packages
-
-- `packages/identity` — protocol library (vitest, offline `verify()`)
-- `packages/contracts` — SolidCash `IdentityAnchor.scash` skeleton
-- `apps/nostrobridge` — Next.js App Router demo
-
-## Configuration
-
-Copy `apps/nostrobridge/.env.example` to `apps/nostrobridge/.env.local`:
-
-- `NEXT_PUBLIC_WIDGET_FACTORY_URL`
-- `NEXT_PUBLIC_GITHUB_URL`
-- `NEXT_PUBLIC_EMBER2026_ADDRESS`
-- `NEXT_PUBLIC_NETWORK` (`mainnet` or `chipnet`)
-- `NEXT_PUBLIC_DEFAULT_AMOUNT_BCH`
+Open http://localhost:3000. From Verify, use Sample, then Tamper id and Tamper address.
