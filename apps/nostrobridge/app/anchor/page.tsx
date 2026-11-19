@@ -15,7 +15,7 @@ export default function AnchorPage() {
   function prepare() {
     setError(null);
     if (!w.binding) {
-      setError("No local binding. Create one on /link, or verify an npub and store it.");
+      setError("No local binding. Create one on Bind, or verify an npub and store it.");
       return;
     }
     try {

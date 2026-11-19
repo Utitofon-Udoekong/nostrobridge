@@ -5,7 +5,7 @@ declare module "@wizardconnect/react" {
     sessionKey?: string;
     persistSession?: boolean;
   }): {
-    state: "idle" | "connecting" | "connected" | "disconnected";
+    state: "idle" | "connecting" | "connected" | "reconnecting" | "disconnected";
     manager: {
       getPubkey: (account: number, index: bigint) => Uint8Array | string | undefined;
     } | null;
@@ -25,5 +25,6 @@ declare module "@wizardconnect/react" {
     qrUri: string;
     title?: string;
     subtitle?: string;
+    theme?: Record<string, string>;
   }): React.JSX.Element;
 }

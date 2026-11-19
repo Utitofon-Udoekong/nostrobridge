@@ -17,7 +17,6 @@ import {
 import { ConnectPanel } from "@/components/ConnectPanel";
 import { useWallet } from "@/components/WalletContext";
 import { Button, Card, CodeBlock, ErrorBox, Field, TextArea } from "@/components/ui";
-import { signPaytacaMessage } from "@/lib/bch-wallet";
 import { parseSignedEventJson, signWithNip07 } from "@/lib/nostr";
 import { copyText } from "@/lib/format";
 
@@ -48,20 +47,6 @@ export default function LinkPage() {
       setStatus("Canonical statement ready. Sign it with both keys.");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    }
-  }
-
-  async function signBch() {
-    if (!draft) return;
-    setError(null);
-    try {
-      const sig = await signPaytacaMessage(draft.bchMessage);
-      setBchSig(sig);
-      setStatus("BCH signature captured from Paytaca.");
-    } catch (e) {
-      setError(
-        `${e instanceof Error ? e.message : String(e)} — paste an Electron Cash signature below if Paytaca is unavailable.`
-      );
     }
   }
 
@@ -163,11 +148,6 @@ export default function LinkPage() {
 
       <Card>
         <h2>Bitcoin Cash</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button type="button" disabled={!draft} onClick={() => void signBch()}>
-            Sign with Paytaca
-          </Button>
-        </div>
         <Field label="Signature">
           <TextArea
             rows={3}

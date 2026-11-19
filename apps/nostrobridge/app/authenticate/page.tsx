@@ -14,8 +14,6 @@ import {
 import { useWallet } from "@/components/WalletContext";
 import { Button, Card, CodeBlock, ErrorBox, Field, Pill, TextArea, TextInput } from "@/components/ui";
 import { parseSignedEventJson, signWithNip07 } from "@/lib/nostr";
-import { signPaytacaMessage } from "@/lib/bch-wallet";
-
 export default function AuthenticatePage() {
   const w = useWallet();
   const store = useMemo(() => new InMemoryReplayStore(), []);
@@ -34,7 +32,7 @@ export default function AuthenticatePage() {
     setError(null);
     setResult(null);
     if (!w.binding) {
-      setError("Create or load a verified binding first (/link).");
+      setError("Create or load a verified binding on Bind first.");
       return;
     }
     const next = createChallenge({
@@ -55,17 +53,6 @@ export default function AuthenticatePage() {
       const unsigned = createUnsignedAuthEvent(challenge, w.binding.statement.nostrPubkey);
       const signed = await signWithNip07(unsigned);
       setEventJson(JSON.stringify(signed, null, 2));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  }
-
-  async function signBch() {
-    if (!challenge) return;
-    setError(null);
-    try {
-      const sig = await signPaytacaMessage(buildAuthSigningMessage(challenge));
-      setBchSig(sig);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -131,9 +118,6 @@ export default function AuthenticatePage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" disabled={!challenge} onClick={() => void signNostr()}>
             Sign with NIP-07
-          </Button>
-          <Button type="button" variant="secondary" disabled={!challenge} onClick={() => void signBch()}>
-            Sign with Paytaca
           </Button>
         </div>
         <Field label="Auth event">

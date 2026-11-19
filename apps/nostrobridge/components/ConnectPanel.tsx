@@ -1,12 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { normalizeCashAddress } from "@bchblaze/identity";
-import { connectPaytaca } from "@/lib/bch-wallet";
 import { connectNip07 } from "@/lib/nostr";
 import { parseNostrPubkey, toNpub } from "@/lib/format";
-import { siteConfig } from "@/lib/config";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useWallet } from "./WalletContext";
 import { Button, Card, ErrorBox, Field, TextInput } from "./ui";
@@ -22,16 +20,11 @@ export function ConnectPanel() {
   const [npubPaste, setNpubPaste] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  async function onPaytaca() {
-    setError(null);
-    try {
-      const addr = await connectPaytaca();
-      w.setBchAddress(addr);
-      w.setBchSource("paytaca");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+  useEffect(() => {
+    if (w.bchSource === "wizardconnect" && w.bchAddress) {
+      setBchPaste(w.bchAddress);
     }
-  }
+  }, [w.bchAddress, w.bchSource]);
 
   async function onNip07() {
     setError(null);
@@ -48,21 +41,6 @@ export function ConnectPanel() {
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <h2>Bitcoin Cash</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button type="button" onClick={() => void onPaytaca()}>
-            Paytaca
-          </Button>
-          {w.paytacaDetected === false ? (
-            <a
-              href={siteConfig.paytacaInstallUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="self-center text-sm"
-            >
-              Install Paytaca
-            </a>
-          ) : null}
-        </div>
         <div className="mt-4">
           <ErrorBoundary
             fallback={
@@ -96,12 +74,6 @@ export function ConnectPanel() {
             Use address
           </Button>
         </div>
-        {w.bchAddress ? (
-          <p className="mt-3 break-all font-mono text-xs text-ink/70">
-            {w.bchAddress}
-            {w.bchSource ? ` · ${w.bchSource}` : ""}
-          </p>
-        ) : null}
       </Card>
 
       <Card>
