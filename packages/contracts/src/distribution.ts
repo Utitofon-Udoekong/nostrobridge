@@ -6,7 +6,7 @@ import {
   bytesToHex,
   hexToBytes,
   type MerkleProof,
-} from "./merkle.ts";
+} from "./merkle";
 
 export type ClaimAsset = "bch" | "fldch";
 

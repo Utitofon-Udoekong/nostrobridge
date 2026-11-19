@@ -2,9 +2,11 @@
 
 ![Nostrobridge](apps/nostrobridge/public/logo.jpg)
 
-Bind a Bitcoin Cash address to a Nostr key. One person, two signatures, and a check anyone can run without trusting this site.
+Template: https://docs.google.com/presentation/d/1xXuMJabCT37gEmyWFrLNhLbdS-MZ2b4ajE7Bif-I644/edit?usp=sharing
+github: https://github.com/Utitofon-Udoekong/nostrobridge
+cashtokenaddress: bitcoincash:zq5hh46r4kudjpsayg58gu99h03p00nw4csaumqgy0
 
-Repository: https://github.com/Utitofon-Udoekong/nostrobridge
+Bind a Bitcoin Cash address to a Nostr key. One person, two signatures, and a check anyone can run without trusting this site.
 
 ## The problem
 
@@ -55,6 +57,7 @@ The full byte layout is `packages/identity/protocol.md`.
 | Pay the bound address | `/pay`, BIP21, mainnet by default |
 | CashTokens commitment | `/anchor`, 32-byte commitment, not broadcast |
 | Reusable library | `@bchblaze/identity`, with `packages/identity/protocol.md` |
+| Top-of-page banner | Presentation, GitHub, and the EMBER2026 address, on `/` only |
 
 ## Run
 
