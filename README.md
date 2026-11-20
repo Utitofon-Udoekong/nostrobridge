@@ -4,6 +4,7 @@
 
 Template: https://docs.google.com/presentation/d/1xXuMJabCT37gEmyWFrLNhLbdS-MZ2b4ajE7Bif-I644/edit?usp=sharing
 github: https://github.com/Utitofon-Udoekong/nostrobridge
+site: https://nostrobridge.vercel.app/
 cashtokenaddress: bitcoincash:zq5hh46r4kudjpsayg58gu99h03p00nw4csaumqgy0
 
 Bind a Bitcoin Cash address to a Nostr key. One person, two signatures, and a check anyone can run without trusting this site.
@@ -61,9 +62,9 @@ The full byte layout is `packages/identity/protocol.md`.
 
 ## Run
 
+The live demo is https://nostrobridge.vercel.app/. Bind a real address and npub, then check that record on Verify.
+
 ```bash
 pnpm install
 pnpm dev
 ```
-
-Open http://localhost:3000. Bind a real address and npub, then check that record on Verify.
