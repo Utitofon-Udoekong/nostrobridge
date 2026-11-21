@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 
 const PRESENTATION = "https://docs.google.com/presentation/d/1xXuMJabCT37gEmyWFrLNhLbdS-MZ2b4ajE7Bif-I644/edit?usp=sharing";
 const GITHUB = "https://github.com/Utitofon-Udoekong/nostrobridge";
-const EMBER = "bitcoincash:zq5hh46r4kudjpsayg58gu99h03p00nw4csaumqgy0";
+const EMBER = "bitcoincash:zrf7lfu7ec657h69me9wm8ye04w36nxfzy6jdvqeqd";
 
 export function HomeBanner() {
   const path = usePathname();
